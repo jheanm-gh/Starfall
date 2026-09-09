@@ -1,0 +1,10 @@
+@import '@fontsource/saira-condensed/500.css';
+@import '@fontsource/saira-condensed/700.css';
+@import '@fontsource/ibm-plex-sans/400.css';
+@import '@fontsource/ibm-plex-sans/500.css';
+@import '@fontsource/ibm-plex-sans/600.css';
+@import './tokens.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
