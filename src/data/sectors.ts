@@ -60,7 +60,12 @@ export const SECTORS: SectorDefinition[] = [
   },
 ];
 
+/**
+ * Story's ten sectors span floors 1-300. Endless keeps going, so the list
+ * cycles rather than parking on Starfall forever — the conditions keep
+ * rotating and roster selection keeps mattering at depth.
+ */
 export function sectorForFloor(floor: number): SectorDefinition {
-  const index = Math.min(SECTORS.length - 1, Math.floor((floor - 1) / 30));
-  return SECTORS[index];
+  const index = Math.max(0, Math.floor((floor - 1) / 30));
+  return SECTORS[index % SECTORS.length];
 }

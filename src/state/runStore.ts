@@ -84,8 +84,8 @@ interface RunStore {
   abandonRun: () => Promise<void>;
 
   enterFloor: () => void;
-  useSkill: (skillId: SkillId) => void;
-  useCommanderSkill: (slot: number) => void;
+  playSkill: (skillId: SkillId) => void;
+  playCommanderSkill: (slot: number) => void;
   concludeCombat: () => void;
   advanceFloor: () => void;
 
@@ -94,7 +94,7 @@ interface RunStore {
   buyRune: (index: number) => boolean;
   buyItem: (index: number) => boolean;
   rerollMerchant: () => boolean;
-  useItem: (itemId: ItemId, heroIndex: number) => boolean;
+  consumeItem: (itemId: ItemId, heroIndex: number) => boolean;
   resolveEvent: (choice: string) => void;
   leaveNode: () => void;
 
@@ -164,7 +164,10 @@ export const useRun = create<RunStore>((setState, getState) => ({
       scrip: startingScrip(difficulty, logistics.includes('log_scrip') ? 80 : 0),
       items: {},
       doctrine,
-      revives: DIFFICULTY[difficulty].revives + (logistics.includes('log_revive') ? 1 : 0),
+      // §12: Ironman has no revives at all, whatever the difficulty allows.
+      revives: mode === 'ironman'
+        ? 0
+        : DIFFICULTY[difficulty].revives + (logistics.includes('log_revive') ? 1 : 0),
       node: null,
       enemyIndex: 0,
       combat: null,
@@ -236,7 +239,7 @@ export const useRun = create<RunStore>((setState, getState) => ({
     void saveRun(next);
   },
 
-  useSkill: (skillId) => {
+  playSkill: (skillId) => {
     const { run } = getState();
     if (!run?.combat || run.combat.outcome !== 'active') return;
     const combat = step(run.combat, { type: 'USE_SKILL', skillId });
@@ -245,7 +248,7 @@ export const useRun = create<RunStore>((setState, getState) => ({
     void saveRun(next);
   },
 
-  useCommanderSkill: (slot) => {
+  playCommanderSkill: (slot) => {
     const { run } = getState();
     if (!run?.combat || run.combat.outcome !== 'active') return;
     const skillId = useAccount.getState().account.commander.skills[slot];
@@ -345,30 +348,63 @@ export const useRun = create<RunStore>((setState, getState) => ({
     // Defeat, or a draw treated as a defeat for the engaged hero.
     hero.alive = false;
     hero.currentHull = 0;
-    const survivors = roster.filter((h) => h.alive);
     let revives = run.revives;
-    if (survivors.length === 0 && revives > 0) {
+    if (!roster.some((h) => h.alive) && revives > 0) {
       revives -= 1;
       hero.alive = true;
       hero.currentHull = Math.round(maxHullFor(hero.defId, hero.level) * 0.4);
     }
 
-    const stillAlive = roster.some((h) => h.alive);
+    const nextIndex = roster.findIndex((h) => h.alive);
+    if (nextIndex === -1) {
+      const dead: RunSave = {
+        ...run,
+        roster,
+        revives,
+        combat: null,
+        phase: 'defeat',
+        journal: [...run.journal, `Crew lost on floor ${run.floor}.`].slice(-60),
+      };
+      setState({ run: dead });
+      void saveRun(dead);
+      account.recordRun(run.floor - 1, run.floor, run.mode);
+      if (run.mode === 'ironman') void clearRun();
+      return;
+    }
+
+    // The next hero steps into the SAME fight, against the enemy as it
+    // stands. Resetting the enemy to full would make a five-hero roster
+    // worth no more than one hero, and would turn every boss into a wall.
+    const blueprint = run.node.enemies[run.enemyIndex];
+    const relief = roster[nextIndex];
+    const continued = startCombat({
+      seed: (run.seed ^ (run.floor * 0x9e37) ^ (nextIndex * 0x2b2b)) | 0,
+      player: { ...heroSpecFor(run, relief), currentHull: relief.currentHull },
+      enemy: {
+        defId: blueprint.defId,
+        level: blueprint.level,
+        statMult: blueprint.statMult,
+        currentHull: combat.enemy.hull,
+        nameOverride: combat.enemy.name,
+      },
+      field: run.node.field,
+    });
+    continued.log.unshift({
+      kind: 'note', round: 1,
+      text: `${getHero(hero.defId).name} is lost. ${getHero(relief.defId).name} takes over.`,
+    });
+
     const next: RunSave = {
       ...run,
       roster,
       revives,
-      combat: null,
-      phase: stillAlive ? 'map' : 'defeat',
-      activeIndex: stillAlive ? roster.findIndex((h) => h.alive) : run.activeIndex,
+      activeIndex: nextIndex,
+      combat: continued,
+      phase: 'combat',
       journal: [...run.journal, `${getHero(hero.defId).name} lost on floor ${run.floor}.`].slice(-60),
     };
     setState({ run: next });
     void saveRun(next);
-    if (!stillAlive) {
-      account.recordRun(run.floor - 1, run.floor, run.mode);
-      if (run.mode === 'ironman') void clearRun();
-    }
   },
 
   advanceFloor: () => {
@@ -500,7 +536,7 @@ export const useRun = create<RunStore>((setState, getState) => ({
     return true;
   },
 
-  useItem: (itemId, heroIndex) => {
+  consumeItem: (itemId, heroIndex) => {
     const { run } = getState();
     if (!run || (run.items[itemId] ?? 0) <= 0) return false;
     const def = getItem(itemId);

@@ -87,7 +87,7 @@ export function generateFloor(runSeed: number, floor: number, difficulty: Diffic
   const pool = candidatePool(floor, kind, deriveSeed(seed, 1));
   const chosen = pick(deriveSeed(seed, 2), 0, pool);
   const level = SCALING.enemyLevel(floor);
-  const statMult = SCALING.NODE_STAT_MULT[kind] * diff.enemyStatMult;
+  const statMult = SCALING.NODE_STAT_MULT[kind] * diff.enemyStatMult * SCALING.depthMultiplier(floor);
 
   let title: string | undefined;
   if (kind === 'apex') {

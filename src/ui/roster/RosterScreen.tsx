@@ -71,7 +71,7 @@ export function RosterScreen() {
                 <Portrait hero={h} size={130} />
                 <div className="mt-1 truncate" style={{ fontFamily: 'var(--font-display)', fontWeight: 500 }}>{h.name}</div>
                 <div className="flex justify-between items-baseline text-xs" style={{ color: 'var(--bone-faint)' }}>
-                  <span>{RACES[h.race].name.split(' ')[0]}</span>
+                  <span>{RACES[h.race].short}</span>
                   <span className="tnum">{owned ? `A${owned.ascension}` : `${owned ? 0 : 0}/${fragmentThreshold(h.rarity)}`}</span>
                 </div>
               </RarityFrame>

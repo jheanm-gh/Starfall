@@ -73,7 +73,7 @@ function RosterStrip() {
 
 function Inventory() {
   const run = useRun((s) => s.run);
-  const useItem = useRun((s) => s.useItem);
+  const consumeItem = useRun((s) => s.consumeItem);
   const socketRune = useRun((s) => s.socketRune);
   const toast = useUi((s) => s.toast);
   if (!run) return null;
@@ -93,7 +93,7 @@ function Inventory() {
               key={id}
               title={ITEMS[id]?.description}
               onClick={() => {
-                const ok = useItem(id, run.activeIndex);
+                const ok = consumeItem(id, run.activeIndex);
                 toast(ok ? `${getItem(id).name} used.` : 'That cannot be used right now.', ok ? 'good' : 'bad');
               }}
             >

@@ -141,8 +141,8 @@ function StatusColumn({ combat, side, align }: { combat: CombatState; side: Side
 
 export function CombatScreen() {
   const run = useRun((s) => s.run);
-  const useSkill = useRun((s) => s.useSkill);
-  const useCommanderSkill = useRun((s) => s.useCommanderSkill);
+  const playSkill = useRun((s) => s.playSkill);
+  const playCommanderSkill = useRun((s) => s.playCommanderSkill);
   const concludeCombat = useRun((s) => s.concludeCombat);
   const commander = useAccount((s) => s.account.commander);
   const logOpen = useUi((s) => s.combatLogOpen);
@@ -164,14 +164,14 @@ export function CombatScreen() {
       const index = Number(e.key) - 1;
       if (index >= 0 && index < skills.length) {
         const id = skills[index].id;
-        if (usable.includes(id)) useSkill(id);
+        if (usable.includes(id)) playSkill(id);
       }
-      if (e.key.toLowerCase() === 'q') useCommanderSkill(0);
-      if (e.key.toLowerCase() === 'w') useCommanderSkill(1);
+      if (e.key.toLowerCase() === 'q') playCommanderSkill(0);
+      if (e.key.toLowerCase() === 'w') playCommanderSkill(1);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [combat, skills, usable, useSkill, useCommanderSkill, toggleLog]);
+  }, [combat, skills, usable, playSkill, playCommanderSkill, toggleLog]);
 
   if (!run || !combat) return null;
 
@@ -242,7 +242,7 @@ export function CombatScreen() {
                       type="button"
                       className="btn text-left"
                       disabled={!enabled}
-                      onClick={() => useSkill(skill.id)}
+                      onClick={() => playSkill(skill.id)}
                       title={skill.description}
                       style={{ opacity: enabled ? 1 : 0.5, padding: '8px 10px' }}
                     >
@@ -269,7 +269,7 @@ export function CombatScreen() {
                   if (!def) return null;
                   const cd = run.commanderCooldowns[def.id] ?? 0;
                   return (
-                    <Button key={def.id} onClick={() => useCommanderSkill(slot)} disabled={cd > 0} title={def.description}>
+                    <Button key={def.id} onClick={() => playCommanderSkill(slot)} disabled={cd > 0} title={def.description}>
                       {def.name} {cd > 0 ? <span className="tnum">({cd})</span> : <span className="text-xs" style={{ color: 'var(--bone-faint)' }}>[{slot === 0 ? 'Q' : 'W'}]</span>}
                     </Button>
                   );

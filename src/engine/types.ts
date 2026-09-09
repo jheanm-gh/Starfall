@@ -31,6 +31,9 @@ export const RACE_IDS: RaceId[] = [
 export interface RaceDefinition {
   id: RaceId;
   name: string;
+  /** Short label for cards and tight columns. Never derived by splitting
+      `name` on a space — that turns "The Reclaimed" into "The". */
+  short: string;
   identity: string;
   /** §5.4 — one type at x0.75, one at x1.25, the rest x1.0. Null for Terran. */
   resists: DamageType | null;

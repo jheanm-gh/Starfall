@@ -133,9 +133,16 @@ export const DIFFICULTY = {
 /* ---------- enemy and reward scaling ---------- */
 
 export const SCALING = {
-  /** Enemy level tracks floor depth. */
+  /** Enemy level tracks floor depth, up to the shared level ceiling. */
   enemyLevel: (floor: number): number =>
     Math.max(1, Math.min(LEVELLING.MAX_LEVEL, Math.round(1 + floor * 0.2))),
+  /**
+   * Past the Story ceiling, level has nowhere left to go, so Endless keeps
+   * scaling through raw stats instead. Below floor 300 this is exactly 1,
+   * so it changes nothing about a Story run.
+   */
+  depthMultiplier: (floor: number): number =>
+    1 + Math.max(0, floor - RUN.TOTAL_FLOORS) * 0.012,
   /** Flat stat multiplier applied on top of level, by node kind. */
   NODE_STAT_MULT: { combat: 1.0, elite: 1.18, boss: 1.35, apex: 1.6, event: 1.0, merchant: 1.0, rest: 1.0 } as Record<string, number>,
   /** Rewards per cleared floor before difficulty multipliers. */
