@@ -7,3 +7,6 @@ coverage
 # scratch driver scripts
 .d.mjs
 .probe.mjs
+
+# TypeScript incremental build artifact
+*.tsbuildinfo
