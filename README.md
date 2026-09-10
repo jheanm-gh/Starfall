@@ -28,7 +28,7 @@ npm run build
 | P6 | 9 remaining races, 140 heroes | Done — 150 heroes, schema-validated |
 | P7 | 300 floors, 10 sectors, conditions | Done — a full Story clear is a test |
 | P8 | Endless, Ironman, Draft, three difficulties | Done |
-| P9 | Real art, audio, polish | Not started — the manifest is ready for it |
+| P9 | Real art, audio, polish | Not started — `docs/P9_ASSET_MANIFEST.md` specifies all 351 assets, and `src/art/manifest.ts` resolves every one of them |
 
 ## The five non-negotiables, and how each is held
 
@@ -54,7 +54,11 @@ asserts all of it.
 **4. The game is fully playable before any art exists.** Every hero renders
 from a deterministic SVG silhouette built from a per-race vocabulary. Drop
 `public/assets/heroes/{race}/{slug}.webp` in and it lights up with no code
-change; a missing file degrades to the placeholder rather than breaking.
+change; a missing file degrades to the placeholder rather than breaking. The
+same holds for every other asset class — backdrops, icons, UI frames, attack
+effects and audio all resolve through `src/art/manifest.ts` and fall back to
+the built-in CSS treatment when absent. `docs/P9_ASSET_MANIFEST.md` is the
+production brief for all 351 of them.
 
 **5. The visual design is specified, not improvised.** `styles/tokens.css`
 is the §2 contract: six colours, two typefaces, radius 0 except status
