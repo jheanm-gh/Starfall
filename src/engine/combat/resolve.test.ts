@@ -64,7 +64,7 @@ describe('combat engine', () => {
     // Jam plus overlapping cooldowns can leave a hero with no usable skill.
     // The turn must still be submittable, or the fight simply stops — which
     // is exactly what happened in play before this was handled.
-    let state = startCombat(setup(31337));
+    const state = startCombat(setup(31337));
     for (const id of state.player.skills) state.player.cooldowns[id] = 9;
     expect(usableSkills(state, 'player')).toHaveLength(0);
 
@@ -78,7 +78,7 @@ describe('combat engine', () => {
   });
 
   it('treats an unusable skill id as a pass rather than a free action', () => {
-    let state = startCombat(setup(4711));
+    const state = startCombat(setup(4711));
     for (const id of state.player.skills) state.player.cooldowns[id] = 5;
     const after = step(state, { type: 'USE_SKILL', skillId: state.player.skills[0] });
     expect(after.log.some((e) => e.kind === 'skill_used' && e.side === 'player')).toBe(false);
