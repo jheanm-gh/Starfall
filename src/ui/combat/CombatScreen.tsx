@@ -142,6 +142,7 @@ function StatusColumn({ combat, side, align }: { combat: CombatState; side: Side
 export function CombatScreen() {
   const run = useRun((s) => s.run);
   const playSkill = useRun((s) => s.playSkill);
+  const pass = useRun((s) => s.pass);
   const playCommanderSkill = useRun((s) => s.playCommanderSkill);
   const concludeCombat = useRun((s) => s.concludeCombat);
   const commander = useAccount((s) => s.account.commander);
@@ -166,12 +167,13 @@ export function CombatScreen() {
         const id = skills[index].id;
         if (usable.includes(id)) playSkill(id);
       }
+      if (e.key === ' ' && usable.length === 0) { e.preventDefault(); pass(); }
       if (e.key.toLowerCase() === 'q') playCommanderSkill(0);
       if (e.key.toLowerCase() === 'w') playCommanderSkill(1);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [combat, skills, usable, playSkill, playCommanderSkill, toggleLog]);
+  }, [combat, skills, usable, playSkill, pass, playCommanderSkill, toggleLog]);
 
   if (!run || !combat) return null;
 
@@ -262,6 +264,17 @@ export function CombatScreen() {
                   );
                 })}
               </div>
+
+              {usable.length === 0 ? (
+                <div className="panel-recess p-3 mt-2 flex items-center justify-between gap-3 flex-wrap">
+                  <span className="text-sm" style={{ color: 'var(--bone-dim)' }}>
+                    Nothing is ready. Hold position and let your systems cycle.
+                  </span>
+                  <Button variant="primary" onClick={pass}>
+                    Hold position <span className="text-xs" style={{ color: 'var(--bone-faint)' }}>[space]</span>
+                  </Button>
+                </div>
+              ) : null}
 
               <div className="flex flex-wrap gap-2 mt-2">
                 {commander.skills.map((id, slot) => {

@@ -85,6 +85,9 @@ interface RunStore {
 
   enterFloor: () => void;
   playSkill: (skillId: SkillId) => void;
+  /** Submit a turn with no action — the only legal move when everything is
+      on cooldown or jammed. */
+  pass: () => void;
   playCommanderSkill: (slot: number) => void;
   concludeCombat: () => void;
   advanceFloor: () => void;
@@ -243,6 +246,15 @@ export const useRun = create<RunStore>((setState, getState) => ({
     const { run } = getState();
     if (!run?.combat || run.combat.outcome !== 'active') return;
     const combat = step(run.combat, { type: 'USE_SKILL', skillId });
+    const next: RunSave = { ...run, combat };
+    setState({ run: next });
+    void saveRun(next);
+  },
+
+  pass: () => {
+    const { run } = getState();
+    if (!run?.combat || run.combat.outcome !== 'active') return;
+    const combat = step(run.combat, { type: 'SKIP' });
     const next: RunSave = { ...run, combat };
     setState({ run: next });
     void saveRun(next);

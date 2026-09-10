@@ -60,6 +60,31 @@ describe('combat engine', () => {
     expect(replay.outcome).toBe(state.outcome);
   });
 
+  it('always leaves a legal move: SKIP advances a round with nothing available', () => {
+    // Jam plus overlapping cooldowns can leave a hero with no usable skill.
+    // The turn must still be submittable, or the fight simply stops — which
+    // is exactly what happened in play before this was handled.
+    let state = startCombat(setup(31337));
+    for (const id of state.player.skills) state.player.cooldowns[id] = 9;
+    expect(usableSkills(state, 'player')).toHaveLength(0);
+
+    const before = state.round;
+    const after = step(state, { type: 'SKIP' });
+    expect(after.round, 'the round must advance').toBeGreaterThan(before);
+    expect(after.outcome === 'active' || after.outcome === 'defeat').toBe(true);
+    expect(after.log.some((e) => e.kind === 'skipped')).toBe(true);
+    // Cooldowns tick while holding, so the lock always resolves itself.
+    expect(after.player.cooldowns[state.player.skills[0]]).toBeLessThan(9);
+  });
+
+  it('treats an unusable skill id as a pass rather than a free action', () => {
+    let state = startCombat(setup(4711));
+    for (const id of state.player.skills) state.player.cooldowns[id] = 5;
+    const after = step(state, { type: 'USE_SKILL', skillId: state.player.skills[0] });
+    expect(after.log.some((e) => e.kind === 'skill_used' && e.side === 'player')).toBe(false);
+    expect(after.round).toBeGreaterThan(state.round);
+  });
+
   it('terminates every matchup within the round limit', () => {
     let draws = 0;
     for (let seed = 1; seed <= 60; seed++) {

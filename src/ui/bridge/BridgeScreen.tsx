@@ -32,6 +32,7 @@ export function BridgeScreen() {
   const maxHeroes = useAccount((s) => s.maxHeroes());
   const run = useRun((s) => s.run);
   const startRun = useRun((s) => s.startRun);
+  const abandonRun = useRun((s) => s.abandonRun);
   const setScreen = useUi((s) => s.setScreen);
   const toast = useUi((s) => s.toast);
 
@@ -39,6 +40,7 @@ export function BridgeScreen() {
   const [difficulty, setDifficulty] = useState<Difficulty>('standard');
   const [picked, setPicked] = useState<string[]>([]);
   const [doctrine, setDoctrine] = useState<DoctrineId | null>(null);
+  const [confirmAbandon, setConfirmAbandon] = useState(false);
 
   const ownedHeroes = useMemo(
     () => HERO_LIST.filter((h) => account.heroes[h.id]),
@@ -115,8 +117,43 @@ export function BridgeScreen() {
             <div className="text-xs" style={{ color: 'var(--bone-dim)' }}>
               {MODE_COPY[run.mode].name} · {run.difficulty} · floor {run.floor} · {run.roster.filter((h) => h.alive).length} alive
             </div>
+            <div className="text-xs mt-1" style={{ color: 'var(--bone-faint)' }}>
+              Abandoning keeps Salvage, hero unlocks and fragments. Levels, runes and Scrip are lost.
+            </div>
           </div>
-          <Button variant="primary" onClick={() => setScreen('run')}>Resume</Button>
+          <div className="flex gap-2">
+            <Button variant="primary" onClick={() => setScreen('run')}>Resume</Button>
+            {/* A run must be endable from here. Reaching the abandon control
+                on the run map is not always possible — a fight you cannot act
+                in has no route back to it. */}
+            <Button
+              variant="danger"
+              onClick={() => setConfirmAbandon(true)}
+            >
+              Abandon run
+            </Button>
+          </div>
+        </Panel>
+      ) : null}
+
+      {confirmAbandon && run ? (
+        <Panel className="p-3 flex items-center justify-between gap-3 flex-wrap" style={{ borderColor: 'var(--oxide)' }}>
+          <span className="text-sm">
+            End the run on floor {run.floor}? Run-scoped progress is lost; Salvage and unlocks are kept.
+          </span>
+          <div className="flex gap-2">
+            <Button
+              variant="danger"
+              onClick={async () => {
+                await abandonRun();
+                setConfirmAbandon(false);
+                toast('Run ended.', 'neutral');
+              }}
+            >
+              End it
+            </Button>
+            <Button onClick={() => setConfirmAbandon(false)}>Keep going</Button>
+          </div>
         </Panel>
       ) : null}
 

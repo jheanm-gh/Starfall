@@ -11,7 +11,7 @@ import { RACES } from './races';
 import { ROSTER, STAT_SOFT_CAPS } from './balance';
 import { STATUSES } from './statuses';
 import { FIELDS } from './fields';
-import { statAtLevel } from '../engine/combat/build';
+import { skillsForAscension, statAtLevel } from '../engine/combat/build';
 
 /** Every primitive kind §8 defines. A skill using anything else is a bug. */
 const KNOWN_PRIMITIVES = new Set([
@@ -115,6 +115,34 @@ describe('hero definitions', () => {
       const damaging = h.skills.filter((id) =>
         getSkill(id).effects.some((e) => DAMAGING.has(e.kind)));
       expect(damaging.length, `${h.id} damaging skills`).toBeGreaterThanOrEqual(2);
+    }
+  });
+
+  it('gives every unit a base attack that is never on cooldown', () => {
+    // The rule: every hero always has an attack available, at every ascension
+    // tier. Because ascension only ever ADDS skills, it is enough to require
+    // the base attack inside the first three — then it is present from a
+    // fresh account onward. A base attack is allowed to be weak; it is not
+    // allowed to be absent, or the hero can be left with no legal move and
+    // the fight simply stops.
+    for (const h of HERO_LIST) {
+      const base = h.skills.slice(0, 3).map(getSkill);
+      const baseAttack = base.find(
+        (s) => s.cooldown === 0 && s.effects.some((e) => DAMAGING.has(e.kind)),
+      );
+      expect(baseAttack, `${h.id} has no cooldown-free base attack`).toBeDefined();
+    }
+  });
+
+  it('keeps a base attack available at every ascension tier', () => {
+    for (const h of HERO_LIST) {
+      for (const tier of [1, 2, 3, 4, 5, 6] as const) {
+        const kit = skillsForAscension(h, tier).map(getSkill);
+        const ready = kit.some(
+          (s) => !s.passive && s.cooldown === 0 && s.effects.some((e) => DAMAGING.has(e.kind)),
+        );
+        expect(ready, `${h.id} at ascension ${tier} has no always-ready attack`).toBe(true);
+      }
     }
   });
 
